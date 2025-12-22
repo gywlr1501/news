@@ -1,0 +1,6 @@
+streamlit
+google-generativeai
+feedparser
+requests
+newspaper3k
+nltk
