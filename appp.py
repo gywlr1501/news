@@ -69,24 +69,7 @@ def get_current_time_str():
 
 def fetch_rss_feed(url):
     try:
-        response = requests.get(url, timeout=10, verify=False)
-        return feedparser.parse(response.content)
-    except Exception as e:
-        return None
-
-# -------------------------------------------
-# 2. 화면 구성 (UI)
-# -------------------------------------------
-st.set_page_config(page_title="기업 뉴스 모니터링", page_icon="💻", layout="wide")
-
-if 'selected_article_url' not in st.session_state:
-    st.session_state['selected_article_url'] = None
-if 'selected_article_title' not in st.session_state:
-    st.session_state['selected_article_title'] = None
-
-with st.sidebar:
-    st.header("⚙️ 모니터링 설정")
-    default_keywords = "롯데마트, 롯데웰푸드, [단독]롯데, 롯데칠성, 세븐일레븐"
+        response수"
     user_input = st.text_area("키워드 입력 (콤마 구분)", value=default_keywords, height=100)
     
     KEYWORDS = [k.strip() for k in user_input.split(',') if k.strip()]
@@ -222,3 +205,4 @@ with tab2:
 if auto_refresh:
     time.sleep(refresh_interval * 60)
     st.rerun()
+
