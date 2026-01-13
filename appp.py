@@ -69,7 +69,7 @@ def get_current_time_str():
 
 def fetch_rss_feed(url):
     try:
-        response수"
+        response"
     user_input = st.text_area("키워드 입력 (콤마 구분)", value=default_keywords, height=100)
     
     KEYWORDS = [k.strip() for k in user_input.split(',') if k.strip()]
@@ -205,4 +205,5 @@ with tab2:
 if auto_refresh:
     time.sleep(refresh_interval * 60)
     st.rerun()
+
 
