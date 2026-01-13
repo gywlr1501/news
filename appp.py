@@ -68,7 +68,7 @@ def get_current_time_str():
     return now.strftime("%Y년 %m월 %d일 %H시 %M분 %S초")
 
 def fetch_rss_feed(url):
-    try:"response"
+    # try: "response" 부분을 지우고 바로 코드를 시작합니다.
     user_input = st.text_area("키워드 입력 (콤마 구분)", value=default_keywords, height=100)
     
     KEYWORDS = [k.strip() for k in user_input.split(',') if k.strip()]
@@ -204,6 +204,7 @@ with tab2:
 if auto_refresh:
     time.sleep(refresh_interval * 60)
     st.rerun()
+
 
 
 
