@@ -17,7 +17,7 @@ import google.generativeai as genai
 # -------------------------------------------
 
 # 👇 [중요] 아까 그 키를 여기에 따옴표 안에 넣어줘!
-GOOGLE_API_KEY = "AIzaSyAdnBk6ZdKpxL98LHHaGj9Bjbfk_dX81DA" 
+GOOGLE_API_KEY ="AIzaSyAdnBk6ZdKpxL98LHHaGj9Bjbfk_dX81DA" 
 
 # Gemini 연결 설정
 try:
@@ -207,4 +207,5 @@ if auto_refresh:
 
 
 이게 전체 코드야 수정해줘
+
 
