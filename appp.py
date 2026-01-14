@@ -255,8 +255,7 @@ with tab2:
         with st.spinner("🔗 실제 기사 주소를 찾는 중..."):
             # [중요] 여기서 구글 주소를 실제 언론사 주소로 바꿉니다.
             final_url = get_final_url(selected_url)
-        
-        # 실제 주소로 요약 시도
+            # 실제 주소로 요약 시도
         with st.spinner(f"Gemini가 기사를 읽고 분석 중입니다... ({final_url})"):
             try:
                 config = Config()
@@ -359,5 +358,6 @@ with tab3:
 if auto_refresh:
     time.sleep(refresh_interval * 60)
     st.rerun()
+
 
 
