@@ -64,8 +64,7 @@ def format_date_kor(date_str):
         return date_str[:16]
 
 def get_current_time_str():
-    KST = timezone(timedelta(hours=9))
-    now = datetime.now(KST) 
+    now = datetime.now()
     return now.strftime("%Y년 %m월 %d일 %H시 %M분 %S초")
 
 def fetch_rss_feed(url):
@@ -78,7 +77,7 @@ def fetch_rss_feed(url):
 # -------------------------------------------
 # 2. 화면 구성 (UI)
 # -------------------------------------------
-st.set_page_config(page_title="실시간 뉴스 모니터링", page_icon="💻", layout="wide")
+st.set_page_config(page_title="실시간간 뉴스 모니터링", page_icon="💻", layout="wide")
 
 if 'selected_article_url' not in st.session_state:
     st.session_state['selected_article_url'] = None
@@ -87,7 +86,7 @@ if 'selected_article_title' not in st.session_state:
 
 with st.sidebar:
     st.header("⚙️ 모니터링 설정")
-    default_keywords = "롯데마트, 롯데웰푸드, [단독]롯데, 롯데칠성, 세븐일레븐, 식약처, 리콜, 식중독"
+    default_keywords = "롯데마트, 롯데웰푸드, [단독]롯데, 롯데칠성, 세븐일레븐, 식약처, 식중독, 리콜"
     user_input = st.text_area("키워드 입력 (콤마 구분)", value=default_keywords, height=100)
     
     KEYWORDS = [k.strip() for k in user_input.split(',') if k.strip()]
@@ -98,7 +97,7 @@ with st.sidebar:
     auto_refresh = st.checkbox("자동 새로고침 켜기", value=True)
     refresh_interval = st.slider("업데이트 주기 (분)", 5, 60, 15)
     
-    if st.button("⏱️ 수동 업데이트"):
+    if st.button("🗑️ 기록 초기화"):
         if os.path.exists(HISTORY_FILE):
             os.remove(HISTORY_FILE)
             st.rerun()
@@ -223,4 +222,3 @@ with tab2:
 if auto_refresh:
     time.sleep(refresh_interval * 60)
     st.rerun()
-
