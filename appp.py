@@ -241,7 +241,7 @@ with tab1:
                         btn_idx += 1
                     st.divider()
 
-# === [탭 2] AI 요약 ===
+# === [탭 2] AI 요약 (수정됨) ===
 with tab2:
     st.header("📝 Gemini 기사 요약")
     selected_url = st.session_state['selected_article_url']
@@ -252,24 +252,30 @@ with tab2:
         st.subheader(f"{st.session_state['selected_article_title']}")
         st.markdown("---")
         
-        with st.spinner("Gemini가 기사를 읽고 분석 중입니다... 🤖"):
+        with st.spinner("🔗 실제 기사 주소를 찾는 중..."):
+            # [중요] 여기서 구글 주소를 실제 언론사 주소로 바꿉니다.
+            final_url = get_final_url(selected_url)
+        
+        # 실제 주소로 요약 시도
+        with st.spinner(f"Gemini가 기사를 읽고 분석 중입니다... ({final_url})"):
             try:
-                # 기사 본문 다운로드
                 config = Config()
                 config.request_timeout = 10
+                # 브라우저처럼 보이게 헤더 설정
+                config.browser_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 config.request_kwargs = {'verify': False}
-                article = Article(selected_url, language='ko', config=config)
+                
+                # 변환된 final_url 사용
+                article = Article(final_url, language='ko', config=config)
                 article.download()
                 article.parse()
                 
-                # 이미지 있으면 표시
                 if article.top_image:
                     st.image(article.top_image, use_container_width=True)
 
-                # Gemini에게 요약 요청
                 if len(article.text) < 50:
-                    st.warning("본문이 너무 짧아 요약할 수 없습니다.")
-                    st.write(article.text)
+                    st.warning("⚠️ 본문을 가져오지 못했습니다. (보안이 강한 언론사이거나 유료 기사일 수 있습니다)")
+                    st.write(f"원본 링크: {final_url}")
                 else:
                     prompt = f"""
                     다음 뉴스 기사를 읽고 아래 형식으로 요약해줘:
@@ -289,7 +295,6 @@ with tab2:
             except Exception as e:
                 st.error("요약에 실패했습니다.")
                 st.caption(f"Error: {e}")
-
 # === [탭 3] 저장소 (신규 기능) ===
 with tab3:
     st.header("🗄️ 저장된 뉴스 관리")
@@ -354,4 +359,5 @@ with tab3:
 if auto_refresh:
     time.sleep(refresh_interval * 60)
     st.rerun()
+
 
