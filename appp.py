@@ -43,17 +43,28 @@ DB_FILE = "news_database.db"
 # 1. 유틸리티 및 DB 함수들
 # -------------------------------------------
 
-# ✅ [누락되었던 함수] 구글 단축 URL을 실제 뉴스 주소로 바꿔주는 함수
 def get_final_url(url):
+    """구글 리다이렉트 URL을 실제 뉴스 URL로 변환"""
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
-        # allow_redirects=True로 최종 목적지 URL을 가져옴
         response = requests.get(url, headers=headers, timeout=5, allow_redirects=True, verify=False)
         return response.url
     except Exception:
         return url
+
+def fetch_rss_feed(url):
+    """RSS 피드 가져오기 (헤더 추가로 차단 방지)"""
+    try:
+        # [수정됨] 헤더를 추가하여 브라우저처럼 위장
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=5, verify=False)
+        return feedparser.parse(response.content)
+    except Exception as e:
+        return None
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -74,13 +85,10 @@ def init_db():
 def save_news_to_db(keyword, title, link, pub_date):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    
-    # 중복 체크
     c.execute("SELECT id FROM saved_news WHERE title = ? AND link = ?", (title, link))
     if c.fetchone():
         conn.close()
-        return False # 이미 존재
-    
+        return False
     saved_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     c.execute("INSERT INTO saved_news (keyword, title, link, pub_date, saved_at) VALUES (?, ?, ?, ?, ?)",
               (keyword, title, link, pub_date, saved_at))
@@ -103,7 +111,6 @@ def delete_news_from_db(news_ids):
     conn.commit()
     conn.close()
 
-# 앱 시작 시 DB 초기화
 init_db()
 
 def load_seen_titles():
@@ -130,13 +137,6 @@ def format_date_kor(date_str):
 def get_current_time_str():
     now = datetime.now()
     return now.strftime("%Y년 %m월 %d일 %H시 %M분 %S초")
-
-def fetch_rss_feed(url):
-    try:
-        response = requests.get(url, timeout=10, verify=False)
-        return feedparser.parse(response.content)
-    except Exception as e:
-        return None
 
 # -------------------------------------------
 # 2. 화면 구성 (UI)
@@ -181,39 +181,45 @@ with tab1:
     grouped_news = {k: [] for k in KEYWORDS}
     new_news_count = 0 
     
-    for keyword in KEYWORDS:
-        clean_keyword = keyword.strip()
-        search_query = clean_keyword + " when:1h"
-        encoded_keyword = urllib.parse.quote(search_query)
-        rss_url = f"https://news.google.com/rss/search?q={encoded_keyword}&hl=ko&gl=KR&ceid=KR:ko"
-        
-        feed = fetch_rss_feed(rss_url)
-        
-        if not feed or not feed.entries:
-            continue
+    with st.spinner("뉴스를 불러오는 중입니다..."):
+        for keyword in KEYWORDS:
+            clean_keyword = keyword.strip()
+            search_query = clean_keyword + " when:1h"
+            encoded_keyword = urllib.parse.quote(search_query)
+            rss_url = f"https://news.google.com/rss/search?q={encoded_keyword}&hl=ko&gl=KR&ceid=KR:ko"
+            
+            feed = fetch_rss_feed(rss_url)
+            
+            if not feed or not feed.entries:
+                continue
 
-        for entry in feed.entries:
-            title = entry.title
-            link = entry.link
-            nice_date = format_date_kor(entry.get('published', ''))
-            
-            if clean_keyword not in title: continue
-            
-            grouped_news[clean_keyword].append({
-                "title": title, "link": link, "date": nice_date
-            })
-            
-            if title not in seen_titles:
-                seen_titles.add(title)
-                save_seen_title(title)
-                new_news_count += 1
+            for entry in feed.entries:
+                title = entry.title
+                link = entry.link
+                nice_date = format_date_kor(entry.get('published', ''))
+                
+                if clean_keyword not in title: continue
+                
+                grouped_news[clean_keyword].append({
+                    "title": title, "link": link, "date": nice_date
+                })
+                
+                if title not in seen_titles:
+                    seen_titles.add(title)
+                    save_seen_title(title)
+                    new_news_count += 1
 
     current_time = get_current_time_str()
     if new_news_count > 0:
         status_container.success(f"🔥 **업데이트 완료 ({current_time})** : {new_news_count}건의 새로운 뉴스!")
         st.toast(f"{new_news_count}건의 새 뉴스가 있습니다!", icon="🔥")
     else:
-        status_container.info(f"✅ **업데이트 완료 ({current_time})** : 새로운 뉴스가 없습니다.")
+        # 뉴스 카드가 하나도 없을 때도 메시지 표시
+        total_news = sum(len(items) for items in grouped_news.values())
+        if total_news == 0:
+             status_container.warning(f"⚠️ **업데이트 완료 ({current_time})** : 현재 검색된 뉴스가 없습니다. (키워드를 확인하거나 구글 연결 상태를 확인하세요)")
+        else:
+             status_container.info(f"✅ **업데이트 완료 ({current_time})** : 새로운 뉴스가 없습니다.")
 
     btn_idx = 0 
     for keyword, items in grouped_news.items():
@@ -240,7 +246,7 @@ with tab1:
                         btn_idx += 1
                     st.divider()
 
-# === [탭 2] AI 요약 (수정됨) ===
+# === [탭 2] AI 요약 ===
 with tab2:
     st.header("📝 Gemini 기사 요약")
     selected_url = st.session_state['selected_article_url']
@@ -251,7 +257,6 @@ with tab2:
         st.subheader(f"{st.session_state['selected_article_title']}")
         st.markdown("---")
         
-        # [중요] 함수 호출 부분
         with st.spinner("🔗 실제 기사 주소를 찾는 중..."):
             final_url = get_final_url(selected_url)
         
